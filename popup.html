@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="UTF-8">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            padding: 15px;
+            width: 200px;
+        }
+
+        h3 {
+            margin-top: 0;
+            font-size: 14px;
+        }
+
+        select {
+            width: 100%;
+            padding: 5px;
+            margin-bottom: 10px;
+        }
+
+        #status {
+            color: green;
+            font-size: 12px;
+            display: none;
+        }
+    </style>
+</head>
+
+<body>
+    <h3>PDF Page Size</h3>
+    <select id="pageSize">
+        <option value="original">Original Image Size</option>
+        <option value="a4">A4 (Portrait)</option>
+        <option value="letter">Letter (Portrait)</option>
+    </select>
+    <span id="status">Saved!</span>
+
+    <script src="popup.js"></script>
+</body>
+
+</html>

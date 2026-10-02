@@ -42,26 +42,67 @@ async function processImageAndDownload(imageUrl) {
             img.onload = () => {
                 const { jsPDF } = window.jspdf;
 
-                const orientation = img.width > img.height ? "landscape" : "portrait";
-                const doc = new jsPDF({
-                    orientation: orientation,
-                    unit: "px",
-                    format: [img.width, img.height]
-                });
+                // Fetch the user's page size preference from storage
+                chrome.storage.local.get({ pageSize: 'original' }, (result) => {
+                    const setting = result.pageSize;
+                    let doc, finalWidth, finalHeight, x = 0, y = 0;
 
-                doc.addImage(img, 'PNG', 0, 0, img.width, img.height);
+                    if (setting === 'original') {
+                        // ORIGINAL LOGIC: Canvas matches exact image dimensions
+                        const orientation = img.width > img.height ? "landscape" : "portrait";
+                        doc = new jsPDF({
+                            orientation: orientation,
+                            unit: "px",
+                            format: [img.width, img.height]
+                        });
+                        finalWidth = img.width;
+                        finalHeight = img.height;
 
-                const pdfBlob = doc.output('blob');
-                const blobUrl = URL.createObjectURL(pdfBlob);
+                    } else {
+                        // FIXED PAGE LOGIC (A4 or Letter, forced to Portrait)
+                        // jsPDF uses 'pt' (points) as the standard unit for print sizes
+                        doc = new jsPDF({
+                            orientation: "portrait",
+                            unit: "pt",
+                            format: setting // 'a4' or 'letter'
+                        });
 
-                chrome.downloads.download({
-                    url: blobUrl,
-                    filename: `image-${Date.now()}.pdf`,
-                    saveAs: false
-                }, () => {
-                    setTimeout(() => URL.revokeObjectURL(blobUrl), 10000);
-                });
+                        // Standard dimensions in points
+                        const pdfWidth = setting === 'a4' ? 595.28 : 612; // A4 vs Letter width
+                        const pdfHeight = setting === 'a4' ? 841.89 : 792; // A4 vs Letter height
+
+                        const imgRatio = img.width / img.height;
+                        const pageRatio = pdfWidth / pdfHeight;
+
+                        // Calculate scaling to shrink the image while maintaining aspect ratio
+                        if (imgRatio > pageRatio) {
+                            // Image is wider than the page: Fit to page width
+                            finalWidth = pdfWidth;
+                            finalHeight = pdfWidth / imgRatio;
+                            y = (pdfHeight - finalHeight) / 2; // Center vertically on the page
+                        } else {
+                            // Image is taller than the page: Fit to page height
+                            finalHeight = pdfHeight;
+                            finalWidth = pdfHeight * imgRatio;
+                            x = (pdfWidth - finalWidth) / 2; // Center horizontally on the page
+                        }
+                    }
+
+                    doc.addImage(img, 'PNG', x, y, finalWidth, finalHeight);
+
+                    const pdfBlob = doc.output('blob');
+                    const blobUrl = URL.createObjectURL(pdfBlob);
+
+                    chrome.downloads.download({
+                        url: blobUrl,
+                        filename: `image-${Date.now()}.pdf`,
+                        saveAs: false
+                    }, () => {
+                        setTimeout(() => URL.revokeObjectURL(blobUrl), 10000);
+                    });
+                }); // End of chrome.storage.local.get
             };
+
             // Handle corrupt image data gracefully
             img.onerror = () => {
                 console.error("Failed to parse the fetched file as an image.");
