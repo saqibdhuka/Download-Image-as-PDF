@@ -8,7 +8,6 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      # Updated to v6 to support Node 24
       - uses: actions/checkout@v6
       
       - name: Extract version from manifest
@@ -17,12 +16,13 @@ jobs:
           VERSION=$(jq -r .version manifest.json)
           echo "EXT_VERSION=$VERSION" >> $GITHUB_ENV
           
-      - name: Zip extension files
-        run: zip -r Download-Image-as-PDF-v${{ env.EXT_VERSION }}.zip . -x "*.git*" ".github/*" "README.md"
-        
-      # Updated to v7 to support Node 24
       - name: Upload Artifact
         uses: actions/upload-artifact@v7
         with:
           name: Download-Image-as-PDF-v${{ env.EXT_VERSION }}
-          path: Download-Image-as-PDF-v${{ env.EXT_VERSION }}.zip
+          path: |
+            .
+            ! .git/
+            ! .github/
+            ! README.md
+            ! *.zip
