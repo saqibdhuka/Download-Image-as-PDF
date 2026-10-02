@@ -8,22 +8,21 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      # Updated to v6 to support Node 24
+      - uses: actions/checkout@v6
       
-      # 1. Read the version from manifest.json using 'jq' (a command-line JSON processor)
       - name: Extract version from manifest
         id: get_version
         run: |
           VERSION=$(jq -r .version manifest.json)
           echo "EXT_VERSION=$VERSION" >> $GITHUB_ENV
           
-      # 2. Create the zip file using that dynamic version variable
       - name: Zip extension files
         run: zip -r Download-Image-as-PDF-v${{ env.EXT_VERSION }}.zip . -x "*.git*" ".github/*" "README.md"
         
-      # 3. Upload the artifact with the versioned name
+      # Updated to v7 to support Node 24
       - name: Upload Artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: Download-Image-as-PDF-v${{ env.EXT_VERSION }}
           path: Download-Image-as-PDF-v${{ env.EXT_VERSION }}.zip
